@@ -1,6 +1,7 @@
 import os
 import json
 import pandas as pd
+import seaborn as sns
 from flask import Flask
 from flask_restful import Resource, Api
 
@@ -21,14 +22,19 @@ class API_PKMON(Resource):
         for type in list_types:
             aux_bool_types = self.dtset_pkmn['Type 1'] == type
             find_types = aux_bool_types | find_types
-            
+        self.group_data_by_types(find_types)
+
         return self.dtset_pkmn.loc[find_types].to_json()
 
-    def group_data_by_types(self):
-        df_by_type = self.dtset_pkmn.groupby(['Type 1', 'Type 2']).agg({'Generation': 'count', 'Legendary': 'sum'})
-        df_by_type.to_csv(root_folder_path + '/Agrupamento_por_Tipo.csv')
+    def group_data_by_types(self, find_types):
+        df_by_type = self.dtset_pkmn.loc[find_types].groupby(['Type 1', 'Type 2']).agg({'Generation': 'max', 'Total':'count', 'Legendary': 'sum'})
+        df_by_type.to_csv(root_folder_path + '/Agrupamento_por_Tipo.csv', sep=';', encoding='utf-8-sig')
         with open(root_folder_path + '/Agrupamento_por_Tipo.txt', 'w') as outfile:
             json.dump(df_by_type.to_json(), outfile)
+    
+    def create_chart(self, find_types):
+        df_by_type = self.dtset_pkmn.loc[find_types].groupby(['Type 1', 'Type 2']).agg({'Generation': 'max', 'Total':'count', 'Legendary': 'sum'})
+
 
 api.add_resource(API_PKMON, '/types/<string:types>')
 
